@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8">
+		<title>空洞骑士网页版</title>
+		<link rel="icon" type="image/png" href="./icon.png" />
+		<link rel="stylesheet" href="./style.css" />
+	</head>
+	<body>
+		<canvas id="unity-canvas">您的浏览器不支持 canvas</canvas>
+		<button id="btn-confirm">开始游戏</button>
+		<!-- 导出存档 -->
+		<button id="savebtn">导出存档</button>
+		<!-- LOADER -->
+		<div id="loader">
+			<div id="progress-bar">
+				<div id="progress-fill"></div>
+			</div>
+			<div id="loading-text">Preparing files...</div>
+		</div>
+		<!-- UNITY -->
+		<div id="unity-mobile-warning">WebGL not supported on mobile</div>
+		<script defer src="./script/script.js"></script>
+		<!-- 谷歌广告 -->
+		<script async
+			src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3670070169085381"
+			crossorigin="anonymous"></script>
+	</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title data-i18n="title">空洞骑士 · Hollow Knight</title>
+		<link rel="stylesheet" href="./style.css" />
+	</head>
+	<body>
+		<!-- 语言切换下拉 -->
+		<div class="lang-switch">
+			<span class="lang-switch__icon">⚑</span>
+			<select id="langSelect" class="lang-switch__select" aria-label="切换语言">
+				<option value="zh-CN">简体中文</option>
+				<option value="zh-TW">繁體中文</option>
+				<option value="zh-HK">繁體香港</option>
+				<option value="en-US">English</option>
+				<option value="ko-KR">한국어</option>
+				<option value="ja-JP">日本語</option>
+				<option value="th-TH">ไทย</option>
+				<option value="vi-VN">Tiếng Việt</option>
+				<option value="ru-RU">Русский</option>
+				<option value="kk-KZ">Қазақша</option>
+				<option value="es-ES">Español</option>
+				<option value="fr-FR">Français</option>
+				<option value="de-DE">Deutsch</option>
+				<option value="pt-BR">Português</option>
+				<option value="it-IT">Italiano</option>
+				<option value="tr-TR">Türkçe</option>
+				<option value="nl-NL">Nederlands</option>
+				<option value="ar-SA">العربية</option>
+			</select>
+		</div>
+		<div class="fireflies" id="fireflies"></div>
+		<div class="bottom-fade"></div>
+		<main class="stage">
+			<div class="title-wrap">
+				<h1 class="title-en" data-i18n="title-en">⌈空洞骑士⌋系列</h1>
+				<p class="title-cn" data-i18n="title-cn">网 页 版</p>
+				<div class="divider"></div>
+			</div>
+			<div class="entries">
+				<a class="card" href="./hk/" target="_blank">
+					<img src="./hk/images/background.jpg" alt="空洞骑士" loading="lazy">
+					<div class="card-label">
+						<div class="card-label__line" data-i18n="card1-line">空 洞 骑 士</div>
+					</div>
+				</a>
+				<a class="card" onclick="alert('正在开发中，敬请期待！')" target="_blank">
+					<img src="./hks/images/background.jpg" alt="空洞骑士：丝之歌" loading="lazy">
+					<div class="card-label">
+						<div class="card-label__line" data-i18n="card2-line">空洞骑士：丝之歌</div>
+					</div>
+				</a>
+			</div>
+		</main>
+		<div class="hint" data-i18n="hint">请 选 择 你 的 游 戏</div>
+		<script defer src="./script/script.js"></script>
+		<!-- 谷歌广告 -->
+		<script async
+			src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3670070169085381"
+			crossorigin="anonymous"></script>
+	</body>
+</html>
