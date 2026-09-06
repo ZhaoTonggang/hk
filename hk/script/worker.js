@@ -1,3 +1,4 @@
+"use strict";
 importScripts('./7z/js7z.js');
 // 定义数据块大小
 const chunkSize = 1024 * 1024, // 1MB/块
@@ -92,7 +93,6 @@ const chunkSize = 1024 * 1024, // 1MB/块
 								);
 							}
 						}
-						await new Promise(resolve => setTimeout(resolve, 0));
 					}
 					const buffer = new Uint8Array(totalReceived);
 					let position = 0;
