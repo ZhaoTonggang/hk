@@ -180,7 +180,7 @@ const chunkSize = 1024 * 1024, // 1MB/块
 								}).then(resolve).catch(reject);
 							});
 							if (!js7z) throw new Error('JS7z初始化失败！');
-							cache = await caches.open('GameData');
+							cache = await caches.open('HKS-GameData');
 							sendStatus(`准备处理 ${pathlen} 个分卷包`);
 							// 检查缓存是否全部命中
 							let allCached = true;

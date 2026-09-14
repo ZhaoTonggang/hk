@@ -130,7 +130,7 @@ const chunkSize = 1024 * 1024, // 1MB/块
 		if (!js7z) throw new Error('初始化失败！');
 		// 打开缓存
 		sendStatus('正在检查缓存...');
-		cache = await caches.open('GameData');
+		cache = await caches.open('HK-GameData');
 		// 每个数据包独立下载 → 写 VFS → 按数据包缓存
 		const pathlen = paths.length;
 		sendStatus(`准备下载 ${pathlen} 个数据包...`);
