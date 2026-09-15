@@ -3,7 +3,7 @@ const loadingText = document.querySelector("#loading-text"),
 	loadingBar = document.querySelector("#unity-loading-bar"),
 	progressBarFull = document.querySelector("#unity-progress-bar-full"),
 	pb = document.getElementById('unity-progress-bar-empty'),
-	CACHE_NAME = "GameData", // bump version if needed
+	CACHE_NAME = "HKS-GameData", // bump version if needed
 	originalFetch = window.fetch,
 	setStatus = (text) => {
 		if (!text) return;
