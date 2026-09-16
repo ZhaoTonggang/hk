@@ -19,6 +19,79 @@ const lt = document.getElementById("loading-text"),
 	copyModal = document.getElementById('copy-modal'),
 	copyText = document.getElementById('copy-text'),
 	copyTargetBtns = Array.from(document.querySelectorAll('.copy-tgt')),
+	// 虚拟按键常量
+	canvasEl = document.getElementById('unity-canvas'),
+	joyBase = document.getElementById('tc-joystick'),
+	joyStick = document.getElementById('tc-stick'),
+	pressed = new Set(),
+	// 虚拟按键映射表
+	KEYS = {
+		up: {
+			key: 'ArrowUp',
+			code: 'ArrowUp',
+			keyCode: 38
+		},
+		down: {
+			key: 'ArrowDown',
+			code: 'ArrowDown',
+			keyCode: 40
+		},
+		left: {
+			key: 'ArrowLeft',
+			code: 'ArrowLeft',
+			keyCode: 37
+		},
+		right: {
+			key: 'ArrowRight',
+			code: 'ArrowRight',
+			keyCode: 39
+		},
+		jump: {
+			key: 'z',
+			code: 'KeyZ',
+			keyCode: 90
+		}, // 跳跃 Z
+		attack: {
+			key: 'x',
+			code: 'KeyX',
+			keyCode: 88
+		}, // 攻击 X
+		dash: {
+			key: 'c',
+			code: 'KeyC',
+			keyCode: 67
+		}, // 冲刺 C
+		focus: {
+			key: 'a',
+			code: 'KeyA',
+			keyCode: 65
+		}, // 聚集/施法 A
+		map: {
+			key: 'Tab',
+			code: 'Tab',
+			keyCode: 9
+		}, // 快速地图 Tab
+		superdash: {
+			key: 's',
+			code: 'KeyS',
+			keyCode: 83
+		}, // 超级冲刺 S
+		dreamnail: {
+			key: 'd',
+			code: 'KeyD',
+			keyCode: 68
+		}, // 梦之钉 D
+		quickcast: {
+			key: 'f',
+			code: 'KeyF',
+			keyCode: 70
+		}, // 快速施法 F
+		inventory: {
+			key: 'i',
+			code: 'KeyI',
+			keyCode: 73
+		} // 物品栏 I
+	},
 	// 更新加载状态文本与进度条
 	setStatus = (text) => {
 		if (!text) return;
@@ -328,8 +401,8 @@ const lt = document.getElementById("loading-text"),
 		// 遍历所有库/store，定位主键中含当前 URL hash 的 userN.dat 所在位置（只读主键）
 		locateSave: async () => {
 			// 严格对齐 Unity WebGL 的 IDBFS MD5 计算逻辑
-			const url = window.location.href,
-				qIdx = url.indexOf('?');
+			let url = window.location.href;
+			const qIdx = url.indexOf('?');
 			if (qIdx !== -1) url = url.substring(0, qIdx);
 			const lastSlash = url.lastIndexOf('/');
 			const hash = md5(url.substring(0, lastSlash));
@@ -404,74 +477,97 @@ const lt = document.getElementById("loading-text"),
 	},
 	// 打开管理面板：扫描各槽位存档状态并更新按钮
 	openManager = async () => {
-		// 存档实际字节数（即游戏读取的文件大小；Int8Array 的 byteLength == length）
-		const byteSize = (v) => {
-				const c = v && v.contents;
-				if (!c) return 0;
-				if (ArrayBuffer.isView(c)) return c.byteLength;
-				if (c instanceof ArrayBuffer) return c.byteLength;
-				return c.length || 0;
-			},
-			// 存档时间格式化为 YYYY-MM-DD HH:mm（本地时间）
-			fmtDate = (t) => {
-				const d = t instanceof Date ? t : new Date(t);
-				if (isNaN(d.getTime())) return '';
-				const p = n => String(n).padStart(2, '0');
-				return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
-					' ' + p(d.getHours()) + ':' + p(d.getMinutes());
-			};
-		saveModal.classList.add('show');
-		slotRows.forEach(row => {
-			row.querySelector('.slot-status').textContent = '读取中…';
-			row.querySelector('.slot-status').classList.remove('has');
-			row.querySelector('.act-export').disabled = true;
-			row.querySelector('.act-copy').disabled = true;
-			row.querySelector('.act-delete').disabled = true;
-		});
-		try {
-			slotInfoCache = {};
-			const {
-				hash,
-				target
-			} = await saveUtil.locateSave();
-			if (target) {
-				const db = await idb.open(target.dbName);
-				let rows = [];
-				try {
-					rows = await idb.getAllKV(db, target.storeName);
-				} finally {
-					db.close();
-				}
-				for (const r of rows) {
-					if (!String(r.key).includes('/idbfs/' + hash + '/')) continue;
-					const s = saveUtil.getSlot(r.key);
-					if (s !== null) slotInfoCache[s] = {
-						size: byteSize(r.value),
-						time: r.value && r.value.timestamp
-					};
-				}
-			}
+			// 存档实际字节数（即游戏读取的文件大小；Int8Array 的 byteLength == length）
+			const byteSize = (v) => {
+					const c = v && v.contents;
+					if (!c) return 0;
+					if (ArrayBuffer.isView(c)) return c.byteLength;
+					if (c instanceof ArrayBuffer) return c.byteLength;
+					return c.length || 0;
+				},
+				// 存档时间格式化为 YYYY-MM-DD HH:mm（本地时间）
+				fmtDate = (t) => {
+					const d = t instanceof Date ? t : new Date(t);
+					if (isNaN(d.getTime())) return '';
+					const p = n => String(n).padStart(2, '0');
+					return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+						' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+				};
+			saveModal.classList.add('show');
 			slotRows.forEach(row => {
-				const slot = +row.dataset.slot,
-					status = row.querySelector('.slot-status'),
-					info = slotInfoCache[slot];
-				if (info) {
-					const kb = info.size >= 1024 ? (info.size / 1024).toFixed(1) + ' KB' : info.size + ' B',
-						date = fmtDate(info.time);
-					status.textContent = (date ? date + ' · ' : '') + kb;
-					status.classList.add('has');
-				} else {
-					status.textContent = '空';
-				}
-				row.querySelector('.act-export').disabled = !info;
-				row.querySelector('.act-copy').disabled = !info;
-				row.querySelector('.act-delete').disabled = !info;
+				row.querySelector('.slot-status').textContent = '读取中…';
+				row.querySelector('.slot-status').classList.remove('has');
+				row.querySelector('.act-export').disabled = true;
+				row.querySelector('.act-copy').disabled = true;
+				row.querySelector('.act-delete').disabled = true;
 			});
-		} catch (e) {
-			slotRows.forEach(row => row.querySelector('.slot-status').textContent = '—');
-			ui.toast('读取存档状态失败：' + e.message, true);
-		}
-	};
+			try {
+				slotInfoCache = {};
+				const {
+					hash,
+					target
+				} = await saveUtil.locateSave();
+				if (target) {
+					const db = await idb.open(target.dbName);
+					let rows = [];
+					try {
+						rows = await idb.getAllKV(db, target.storeName);
+					} finally {
+						db.close();
+					}
+					for (const r of rows) {
+						if (!String(r.key).includes('/idbfs/' + hash + '/')) continue;
+						const s = saveUtil.getSlot(r.key);
+						if (s !== null) slotInfoCache[s] = {
+							size: byteSize(r.value),
+							time: r.value && r.value.timestamp
+						};
+					}
+				}
+				slotRows.forEach(row => {
+					const slot = +row.dataset.slot,
+						status = row.querySelector('.slot-status'),
+						info = slotInfoCache[slot];
+					if (info) {
+						const kb = info.size >= 1024 ? (info.size / 1024).toFixed(1) + ' KB' : info.size + ' B',
+							date = fmtDate(info.time);
+						status.textContent = (date ? date + ' · ' : '') + kb;
+						status.classList.add('has');
+					} else {
+						status.textContent = '空';
+					}
+					row.querySelector('.act-export').disabled = !info;
+					row.querySelector('.act-copy').disabled = !info;
+					row.querySelector('.act-delete').disabled = !info;
+				});
+			} catch (e) {
+				slotRows.forEach(row => row.querySelector('.slot-status').textContent = '—');
+				ui.toast('读取存档状态失败：' + e.message, true);
+			}
+		},
+		// 虚拟按键相关
+		sendKey = (type, def) => {
+			const ev = new KeyboardEvent(type, {
+				key: def.key,
+				code: def.code,
+				keyCode: def.keyCode,
+				which: def.keyCode,
+				bubbles: true,
+				cancelable: true
+			});
+			(canvasEl || window).dispatchEvent(ev);
+		},
+		release = (btn) => {
+			const def = KEYS[btn.dataset.k];
+			if (!def || !pressed.has(btn)) return;
+			pressed.delete(btn);
+			btn.classList.remove('active');
+			sendKey('keyup', def);
+		},
+		// 兜底：切后台/松手异常时释放所有仍按住的键，避免角色一直移动
+		releaseAll = () => {
+			pressed.forEach(b => release(b));
+		};
 svb.onclick = openManager;
 // 隐藏的文件选择器（导入用）
 const importInput = document.createElement('input');
@@ -653,11 +749,10 @@ importInput.onchange = async (e) => {
 		ui.toast('导入失败：' + e.message, true);
 	}
 };
-// 键盘ESC关闭弹窗
+// 键盘ESC关闭弹窗（拷贝目标菜单只能通过其关闭按钮关闭，不响应 Esc）
 document.addEventListener('keydown', (e) => {
 	if (e.key !== 'Escape') return;
 	if (confirmModal.classList.contains('show')) ui.closeConfirm(false);
-	else if (copyModal.classList.contains('show')) ui.closeCopy();
 });
 document.getElementById('save-modal-cancel').onclick = () => saveModal.classList.remove('show');
 document.getElementById('confirm-ok').onclick = () => ui.closeConfirm(true);
@@ -665,9 +760,8 @@ document.getElementById('confirm-cancel').onclick = () => ui.closeConfirm(false)
 confirmModal.onclick = (e) => {
 	if (e.target === confirmModal) ui.closeConfirm(false);
 };
-copyModal.onclick = (e) => {
-	if (e.target === copyModal) ui.closeCopy();
-};
+// 拷贝目标菜单：仅"关闭"按钮可关闭（不响应遮罩点击与 Esc）
+document.getElementById('copy-cancel').onclick = () => ui.closeCopy();
 // 开始游戏
 document.getElementById('btn-confirm').onclick = (e) => {
 	e.currentTarget.style.display = 'none';
@@ -727,6 +821,121 @@ document.getElementById('btn-confirm').onclick = (e) => {
 						setStatus(`${progress} - 数据载入中...`);
 					}).then(() => {
 						loader.style.display = "none";
+						// 显示虚拟按键并配置虚拟按键
+						document.body.classList.add('game-running');
+						// 只在 canvas 上派发一次：事件冒泡会依次经过 canvas → document → window，Unity 无论把键盘监听挂在这三者中的哪一个都能恰好收到一次（避免重复 keydown）
+						document.querySelectorAll('#touch-controls .tc-btn').forEach(btn => {
+							btn.addEventListener('pointerdown', (e) => {
+								e.preventDefault();
+								try {
+									btn.setPointerCapture(e.pointerId);
+								} catch (_) {}
+								const def = KEYS[btn.dataset.k];
+								if (def && !pressed.has(btn)) {
+									pressed.add(btn);
+									btn.classList.add('active');
+									sendKey('keydown', def);
+								}
+							});
+							['pointerup', 'pointercancel', 'lostpointercapture'].forEach(
+								ev =>
+								btn.addEventListener(ev, () => {
+									const def = KEYS[btn.dataset.k];
+									if (def && pressed.has(btn)) {
+										pressed.delete(btn);
+										btn.classList.remove('active');
+										sendKey('keyup', def);
+									}
+								})
+							);
+							// 阻止长按菜单、双击缩放等默认手势
+							btn.addEventListener('contextmenu', e => e.preventDefault());
+						});
+						document.addEventListener('visibilitychange', () => {
+							if (document.hidden) releaseAll();
+						});
+						window.addEventListener('pagehide', releaseAll);
+						window.addEventListener('blur', releaseAll);
+						// ========== 虚拟摇杆：8 向死区 → 方向键（支持斜向组合） ==========
+						if (joyBase && joyStick) {
+							// 激活死区（摇杆位移占比）：低于此视为回中
+							let joyActive = false,
+								joyId = null,
+								curDirs = [];
+							const DEAD = 0.32,
+								// 双轴独立死区：垂直/水平推动只触发单轴，斜向推动两轴都过死区即组合（8 向）
+								updateDirs = (dx, dy) => {
+									const next = [];
+									if (Math.abs(dy) > DEAD) next.push(dy < 0 ? 'up' : 'down');
+									if (Math.abs(dx) > DEAD) next.push(dx < 0 ? 'left' : 'right');
+									// 差集更新：新进入方向发 keydown，离开方向发 keyup
+									for (const d of next)
+										if (!curDirs.includes(d)) sendKey('keydown', KEYS[d]);
+									for (const d of curDirs)
+										if (!next.includes(d)) sendKey('keyup', KEYS[d]);
+									curDirs = next;
+								},
+								move = (e) => {
+									if (!joyActive || e.pointerId !== joyId) return;
+									const r = joyBase.getBoundingClientRect();
+									const cx = r.left + r.width / 2,
+										cy = r.top + r.height / 2;
+									// flex 居中后，内摇杆可移动半径 = 外盘半径 − 内摇杆半径（均按含 border 的盒尺寸）
+									const max = (r.width - joyStick.getBoundingClientRect().width) /
+										2;
+									let dx = e.clientX - cx,
+										dy = e.clientY - cy;
+									const len = Math.hypot(dx, dy);
+									if (len > max) {
+										dx = dx / len * max;
+										dy = dy / len * max;
+									}
+									// dx,dy 为相对中心的像素偏移（已限制在半径内）
+									joyStick.style.transform = 'translate(' + dx + 'px,' + dy +
+										'px)';
+									updateDirs(dx / max, dy / max);
+								},
+								joyReset = () => {
+									if (!joyActive) return;
+									joyActive = false;
+									joyId = null;
+									joyBase.classList.remove('active');
+									joyStick.classList.remove('moving');
+									joyStick.style.transform = 'translate(0,0)';
+									updateDirs(0, 0);
+								};
+							joyBase.addEventListener('pointerdown', (e) => {
+								e.preventDefault();
+								if (joyActive) return;
+								joyActive = true;
+								joyId = e.pointerId;
+								try {
+									joyBase.setPointerCapture(e.pointerId);
+								} catch (_) {}
+								joyBase.classList.add('active');
+								joyStick.classList.add('moving'); // 拖动时关闭过渡，做到实时跟手
+								move(e);
+							});
+							joyBase.addEventListener('pointermove', move);
+							['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => {
+								joyBase.addEventListener(ev, (e) => {
+									if (e.pointerId !== joyId) return;
+									joyActive = false;
+									joyId = null;
+									joyBase.classList.remove('active');
+									joyStick.classList.remove('moving');
+									joyStick.style.transform = 'translate(0,0)';
+									updateDirs(0, 0);
+								});
+							});
+							joyBase.addEventListener('contextmenu', e => e.preventDefault());
+							// 切后台/失焦时摇杆回中
+							document.addEventListener('visibilitychange', () => {
+								if (document.hidden) joyReset();
+							});
+							window.addEventListener('pagehide', joyReset);
+							window.addEventListener('blur', joyReset);
+						}
 					}).catch(alert);
 				};
 				document.body.appendChild(sc);

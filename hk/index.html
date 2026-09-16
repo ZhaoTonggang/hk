@@ -2,12 +2,36 @@
 <html lang="zh-CN">
 	<head>
 		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<title>空洞骑士网页版</title>
 		<link rel="icon" type="image/png" href="./icon.png" />
 		<link rel="stylesheet" href="./style.css" />
 	</head>
 	<body>
 		<canvas id="unity-canvas">您的浏览器不支持 canvas</canvas>
+		<!-- 移动端虚拟按键（仅触屏设备进入游戏后显示） -->
+		<div id="touch-controls">
+			<div class="tc-joystick" id="tc-joystick">
+				<div class="tc-stick" id="tc-stick"></div>
+			</div>
+			<div class="tc-side">
+				<div class="tc-mini-row">
+					<button class="tc-btn tc-mini" data-k="map"><b>Tab</b><small>地图</small></button>
+					<button class="tc-btn tc-mini" data-k="inventory"><b>I</b><small>物品</small></button>
+				</div>
+				<div class="tc-mini-row">
+					<button class="tc-btn tc-mini" data-k="dreamnail"><b>D</b><small>梦钉</small></button>
+					<button class="tc-btn tc-mini" data-k="superdash"><b>S</b><small>超冲</small></button>
+					<button class="tc-btn tc-mini" data-k="quickcast"><b>F</b><small>快施</small></button>
+				</div>
+				<div class="tc-main">
+					<button class="tc-btn tc-big" data-k="focus"><b>A</b><small>聚集</small></button>
+					<button class="tc-btn tc-big" data-k="dash"><b>C</b><small>冲刺</small></button>
+					<button class="tc-btn tc-big" data-k="attack"><b>X</b><small>攻击</small></button>
+					<button class="tc-btn tc-big tc-jump" data-k="jump"><b>Z</b><small>跳跃</small></button>
+				</div>
+			</div>
+		</div>
 		<button id="btn-confirm">开始游戏</button>
 		<!-- 存档管理 -->
 		<button id="savemgr">存档管理</button>

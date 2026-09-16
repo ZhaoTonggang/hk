@@ -1,6 +1,8 @@
 * {
 	margin: 0;
 	padding: 0;
+	user-select: none;
+	touch-action: none;
 	font-family: YouYuan, Yuanti SC, KaiTi, Arial, sans-serif;
 }
 
@@ -141,6 +143,7 @@ body {
 	display: none;
 	align-items: center;
 	justify-content: center;
+	padding: 16px;
 	background: rgba(0, 0, 0, .62);
 	z-index: 10000;
 }
@@ -150,7 +153,10 @@ body {
 }
 
 #save-modal-box {
-	width: 468px;
+	width: min(468px, 100%);
+	max-height: calc(100vh - 32px);
+	overflow-y: auto;
+	box-sizing: border-box;
 	padding: 26px 24px 22px;
 	text-align: center;
 	background: rgba(16, 18, 24, .97);
@@ -158,6 +164,7 @@ body {
 	border-radius: 14px;
 	box-shadow: 0 0 28px rgba(0, 255, 255, .22);
 	animation: modal-pop .18s ease;
+	-webkit-overflow-scrolling: touch;
 }
 
 @keyframes modal-pop {
@@ -208,17 +215,24 @@ body {
 	flex-direction: column;
 	align-items: flex-start;
 	gap: 2px;
+	flex: 1 1 auto;
+	min-width: 0;
 }
 
 .slot-name {
 	font-size: 16px;
 	font-weight: bold;
 	color: #d7f5f5;
+	white-space: nowrap;
 }
 
 .slot-status {
 	font-size: 12px;
 	color: #7f9a9a;
+	max-width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .slot-status.has {
@@ -229,7 +243,7 @@ body {
 	margin: 6px 0 2px;
 	font-size: 12px;
 	color: #8d9bd0;
-	letter-weight: bold;
+	font-weight: bold;
 	letter-spacing: 1px;
 	text-align: left;
 }
@@ -242,14 +256,17 @@ body {
 .slot-actions {
 	display: flex;
 	gap: 6px;
+	flex: 0 0 auto;
 }
 
 .act-btn {
-	padding: 7px 10px;
+	padding: 7px 9px;
 	font-size: 14px;
 	cursor: pointer;
 	border-radius: 8px;
 	transition: .2s;
+	white-space: nowrap;
+	flex: 0 0 auto;
 }
 
 .act-export {
@@ -357,6 +374,7 @@ body {
 	display: none;
 	align-items: center;
 	justify-content: center;
+	padding: 16px;
 	background: rgba(0, 0, 0, .7);
 	z-index: 10002;
 }
@@ -366,7 +384,10 @@ body {
 }
 
 #confirm-modal-box {
-	width: 340px;
+	width: min(340px, 100%);
+	box-sizing: border-box;
+	max-height: calc(100vh - 32px);
+	overflow-y: auto;
 	padding: 26px 28px 22px;
 	text-align: center;
 	background: rgba(16, 18, 24, .98);
@@ -435,6 +456,7 @@ body {
 	display: none;
 	align-items: center;
 	justify-content: center;
+	padding: 16px;
 	background: rgba(0, 0, 0, .7);
 	z-index: 10001;
 }
@@ -444,7 +466,10 @@ body {
 }
 
 #copy-modal-box {
-	width: 340px;
+	width: min(340px, 100%);
+	box-sizing: border-box;
+	max-height: calc(100vh - 32px);
+	overflow-y: auto;
 	padding: 26px 28px 22px;
 	text-align: center;
 	background: rgba(16, 18, 24, .98);
@@ -513,6 +538,297 @@ body {
 #copy-cancel:hover {
 	color: #fff;
 	border-color: #fff;
+}
+
+/* ========== 移动端虚拟按键 ========== */
+#touch-controls {
+	display: none;
+	position: fixed;
+	inset: 0;
+	z-index: 500;
+	pointer-events: none;
+	/* 不遮挡游戏画面，只在按钮上接收触摸 */
+}
+
+/* 触屏设备 + 进入游戏后显示 */
+@media (pointer: coarse) {
+	body.game-running #touch-controls {
+		display: block;
+	}
+}
+
+.tc-btn {
+	pointer-events: auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 1px;
+	margin: 0;
+	padding: 0;
+	font-family: inherit;
+	color: #fff;
+	background: rgba(20, 24, 32, .32);
+	border: 2px solid rgba(255, 255, 255, .55);
+	border-radius: 50%;
+	cursor: pointer;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: transparent;
+	touch-action: none;
+	backdrop-filter: blur(1px);
+	transition: background .08s, transform .08s;
+}
+
+.tc-btn b {
+	font-size: 20px;
+	font-weight: bold;
+	line-height: 1;
+}
+
+.tc-btn small {
+	font-size: 10px;
+	line-height: 1;
+	opacity: .82;
+}
+
+.tc-btn .tc-arrow {
+	font-size: 22px;
+	line-height: 1;
+}
+
+.tc-btn.active,
+.tc-btn:active {
+	background: rgba(255, 255, 255, .38);
+	transform: scale(.93);
+}
+
+/* 左下：虚拟摇杆（8 向 → 方向键） */
+.tc-joystick {
+	position: absolute;
+	left: calc(26px + env(safe-area-inset-left));
+	bottom: calc(26px + env(safe-area-inset-bottom));
+	width: 132px;
+	height: 132px;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(20, 24, 32, .28), rgba(20, 24, 32, .16));
+	border: 2px solid rgba(255, 255, 255, .4);
+	box-sizing: border-box;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: auto;
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.tc-stick {
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, .28);
+	border: 2px solid rgba(255, 255, 255, .65);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, .35);
+	transition: background .08s;
+}
+
+.tc-stick.moving {
+	transition: none;
+}
+
+.tc-joystick.active .tc-stick {
+	background: rgba(255, 255, 255, .5);
+}
+
+/* 右下：动作键 */
+.tc-side {
+	position: absolute;
+	right: calc(14px + env(safe-area-inset-right));
+	bottom: calc(14px + env(safe-area-inset-bottom));
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 8px;
+}
+
+.tc-mini-row {
+	display: flex;
+	gap: 8px;
+}
+
+.tc-mini {
+	width: 50px;
+	height: 50px;
+	border-radius: 50%;
+}
+
+.tc-mini b {
+	font-size: 16px;
+}
+
+.tc-mini small {
+	font-size: 9px;
+}
+
+/* 2×2 主动作键：聚集/冲刺/攻击/跳跃 */
+.tc-main {
+	display: grid;
+	grid-template-columns: repeat(2, 64px);
+	grid-template-rows: repeat(2, 64px);
+	gap: 10px;
+	margin-top: 2px;
+}
+
+.tc-big {
+	width: 64px;
+	height: 64px;
+}
+
+.tc-jump {
+	border-color: rgba(120, 220, 255, .8);
+	background: rgba(60, 150, 190, .32);
+}
+
+/* 矮屏（横屏手机）压缩尺寸，避免占太多画面 */
+@media (pointer: coarse) and (max-height: 420px) {
+	.tc-joystick {
+		width: 110px;
+		height: 110px;
+	}
+
+	.tc-stick {
+		width: 46px;
+		height: 46px;
+	}
+
+	.tc-main {
+		grid-template-columns: repeat(2, 54px);
+		grid-template-rows: repeat(2, 54px);
+		gap: 8px;
+	}
+
+	.tc-big {
+		width: 54px;
+		height: 54px;
+	}
+
+	.tc-big b {
+		font-size: 17px;
+	}
+
+	.tc-mini {
+		width: 42px;
+		height: 42px;
+	}
+
+	.tc-mini b {
+		font-size: 14px;
+	}
+}
+
+/* ========== 存档管理响应式适配 ========== */
+@media (max-width: 480px) {
+	#savemgr {
+		padding: 8px 12px;
+		font-size: 13px;
+		top: 8px;
+		right: 8px;
+	}
+
+	#save-modal-box {
+		padding: 20px 16px 18px;
+		border-radius: 12px;
+	}
+
+	#save-modal-title {
+		font-size: 19px;
+	}
+
+	#save-modal-tip {
+		font-size: 12px;
+		margin-bottom: 14px;
+	}
+
+	#save-slots {
+		gap: 8px;
+		margin-bottom: 16px;
+	}
+
+	/* 槽位行改为上下堆叠：信息在上，4 个操作按钮在下，避免横向挤压 */
+	.slot-row {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+		padding: 12px;
+	}
+
+	.slot-info {
+		flex-direction: row;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 8px;
+		width: 100%;
+	}
+
+	.slot-name {
+		font-size: 15px;
+	}
+
+	.slot-status {
+		font-size: 11px;
+		text-align: right;
+	}
+
+	.slot-actions {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 6px;
+		width: 100%;
+	}
+
+	.act-btn {
+		padding: 10px 4px;
+		font-size: 13px;
+	}
+
+	.slot-divider {
+		font-size: 11px;
+	}
+
+	/* 确认/拷贝弹窗收紧内边距 */
+	#confirm-modal-box,
+	#copy-modal-box {
+		padding: 22px 18px 18px;
+	}
+
+	#copy-targets {
+		gap: 8px;
+	}
+
+	.copy-tgt {
+		padding: 12px 0;
+		font-size: 14px;
+	}
+
+	#save-toast {
+		bottom: 28px;
+		font-size: 13px;
+		padding: 10px 16px;
+	}
+}
+
+/* 超窄屏（小手机）进一步压缩 */
+@media (max-width: 340px) {
+	.act-btn {
+		font-size: 12px;
+		padding: 9px 2px;
+	}
+
+	#save-modal-title {
+		font-size: 17px;
+	}
 }
 
 /* 关闭空广告 */
