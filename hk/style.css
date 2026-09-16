@@ -540,6 +540,16 @@ body {
 	border-color: #fff;
 }
 
+/* 弹窗内恢复垂直触摸滚动：全局 * { touch-action: none } 是为游戏触屏控制设置的，会连带禁用弹窗的触摸滚动，这里仅对弹窗及其子元素放开纵向手势（点击不受影响） */
+#save-modal-box,
+#save-modal-box *,
+#confirm-modal-box,
+#confirm-modal-box *,
+#copy-modal-box,
+#copy-modal-box * {
+	touch-action: pan-y;
+}
+
 /* ========== 移动端虚拟按键 ========== */
 #touch-controls {
 	display: none;

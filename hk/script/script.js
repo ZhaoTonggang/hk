@@ -861,7 +861,9 @@ document.getElementById('btn-confirm').onclick = (e) => {
 							// 激活死区（摇杆位移占比）：低于此视为回中
 							let joyActive = false,
 								joyId = null,
-								curDirs = [];
+								curDirs = [],
+								originX = 0,
+								originY = 0;
 							const DEAD = 0.32,
 								// 双轴独立死区：垂直/水平推动只触发单轴，斜向推动两轴都过死区即组合（8 向）
 								updateDirs = (dx, dy) => {
@@ -877,20 +879,19 @@ document.getElementById('btn-confirm').onclick = (e) => {
 								},
 								move = (e) => {
 									if (!joyActive || e.pointerId !== joyId) return;
-									const r = joyBase.getBoundingClientRect();
-									const cx = r.left + r.width / 2,
-										cy = r.top + r.height / 2;
-									// flex 居中后，内摇杆可移动半径 = 外盘半径 − 内摇杆半径（均按含 border 的盒尺寸）
-									const max = (r.width - joyStick.getBoundingClientRect().width) /
-										2;
-									let dx = e.clientX - cx,
-										dy = e.clientY - cy;
-									const len = Math.hypot(dx, dy);
+									let dx = e.clientX - originX,
+										dy = e.clientY - originY;
+									const r = joyBase.getBoundingClientRect(),
+										// flex 居中后，内摇杆可移动半径 = 外盘半径 − 内摇杆半径（均按含 border 的盒尺寸）
+										max = (r.width - joyStick.getBoundingClientRect().width) /
+										2,
+										// 以【按下瞬间的触点】为零点，只看手指的相对移动量，避免拇指没按在绝对中心时摇杆瞬间偏移、误触发方向（“向上飘”）
+										len = Math.hypot(dx, dy);
 									if (len > max) {
 										dx = dx / len * max;
 										dy = dy / len * max;
 									}
-									// dx,dy 为相对中心的像素偏移（已限制在半径内）
+									// dx,dy 为相对按下点的像素偏移（已限制在半径内）
 									joyStick.style.transform = 'translate(' + dx + 'px,' + dy +
 										'px)';
 									updateDirs(dx / max, dy / max);
@@ -909,12 +910,16 @@ document.getElementById('btn-confirm').onclick = (e) => {
 								if (joyActive) return;
 								joyActive = true;
 								joyId = e.pointerId;
+								originX = e.clientX; // 按下点即零点
+								originY = e.clientY;
 								try {
 									joyBase.setPointerCapture(e.pointerId);
 								} catch (_) {}
 								joyBase.classList.add('active');
 								joyStick.classList.add('moving'); // 拖动时关闭过渡，做到实时跟手
-								move(e);
+								// 按下瞬间不偏移、不出方向，等待手指实际移动
+								joyStick.style.transform = 'translate(0,0)';
+								updateDirs(0, 0);
 							});
 							joyBase.addEventListener('pointermove', move);
 							['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => {
