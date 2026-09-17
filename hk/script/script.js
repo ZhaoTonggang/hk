@@ -858,9 +858,8 @@ document.getElementById('btn-confirm').onclick = (e) => {
 						window.addEventListener('blur', releaseAll);
 						// ========== 虚拟摇杆：8 向死区 → 方向键（支持斜向组合） ==========
 						if (joyBase && joyStick) {
-							// 激活死区（摇杆位移占比）：低于此视为回中
-							let joyActive = false,
-								joyId = null,
+							// move/up/cancel 一律挂在 window 上并以 pointerId 匹配，不依赖 setPointerCapture
+							let joyId = null,
 								curDirs = [],
 								originX = 0,
 								originY = 0;
@@ -877,8 +876,16 @@ document.getElementById('btn-confirm').onclick = (e) => {
 										if (!next.includes(d)) sendKey('keyup', KEYS[d]);
 									curDirs = next;
 								},
+								// 强制回中：释放全部方向键并复位视觉（结束触摸 / 新指针接管 / 切后台时复用）
+								joyReset = () => {
+									joyId = null;
+									joyBase.classList.remove('active');
+									joyStick.classList.remove('moving');
+									joyStick.style.transform = 'translate(0,0)';
+									updateDirs(0, 0);
+								},
 								move = (e) => {
-									if (!joyActive || e.pointerId !== joyId) return;
+									if (e.pointerId !== joyId) return;
 									let dx = e.clientX - originX,
 										dy = e.clientY - originY;
 									const r = joyBase.getBoundingClientRect(),
@@ -896,19 +903,14 @@ document.getElementById('btn-confirm').onclick = (e) => {
 										'px)';
 									updateDirs(dx / max, dy / max);
 								},
-								joyReset = () => {
-									if (!joyActive) return;
-									joyActive = false;
-									joyId = null;
-									joyBase.classList.remove('active');
-									joyStick.classList.remove('moving');
-									joyStick.style.transform = 'translate(0,0)';
-									updateDirs(0, 0);
+								endPointer = (e) => {
+									if (e.pointerId !== joyId) return;
+									joyReset();
 								};
 							joyBase.addEventListener('pointerdown', (e) => {
 								e.preventDefault();
-								if (joyActive) return;
-								joyActive = true;
+								// 已有活动指针（多指误触 / 上一轮结束事件丢失的残留状态）时，先释放旧方向再让新指针接管，绝不能静默忽略 —— 否则旧方向键永不释放、新输入也全部失效
+								if (joyId !== null) joyReset();
 								joyId = e.pointerId;
 								originX = e.clientX; // 按下点即零点
 								originY = e.clientY;
@@ -919,20 +921,10 @@ document.getElementById('btn-confirm').onclick = (e) => {
 								joyStick.classList.add('moving'); // 拖动时关闭过渡，做到实时跟手
 								// 按下瞬间不偏移、不出方向，等待手指实际移动
 								joyStick.style.transform = 'translate(0,0)';
-								updateDirs(0, 0);
 							});
-							joyBase.addEventListener('pointermove', move);
-							['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => {
-								joyBase.addEventListener(ev, (e) => {
-									if (e.pointerId !== joyId) return;
-									joyActive = false;
-									joyId = null;
-									joyBase.classList.remove('active');
-									joyStick.classList.remove('moving');
-									joyStick.style.transform = 'translate(0,0)';
-									updateDirs(0, 0);
-								});
-							});
+							window.addEventListener('pointermove', move);
+							window.addEventListener('pointerup', endPointer);
+							window.addEventListener('pointercancel', endPointer);
 							joyBase.addEventListener('contextmenu', e => e.preventDefault());
 							// 切后台/失焦时摇杆回中
 							document.addEventListener('visibilitychange', () => {
