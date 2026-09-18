@@ -906,6 +906,10 @@ document.getElementById('btn-confirm').onclick = (e) => {
 								endPointer = (e) => {
 									if (e.pointerId !== joyId) return;
 									joyReset();
+								},
+								releaseStuckControls = () => {
+									joyReset();
+									releaseAll();
 								};
 							joyBase.addEventListener('pointerdown', (e) => {
 								e.preventDefault();
@@ -925,6 +929,24 @@ document.getElementById('btn-confirm').onclick = (e) => {
 							window.addEventListener('pointermove', move);
 							window.addEventListener('pointerup', endPointer);
 							window.addEventListener('pointercancel', endPointer);
+							// lostpointercapture 不冒泡：系统强制释放指针捕获（输入模式切换、触摸流被掐断）,可能只来这一个事件而没有 pointercancel，捕获阶段监听兜底回中
+							window.addEventListener('lostpointercapture', endPointer, true);
+							// 输入环境切换兜底：外接鼠标/触摸板（或 scrcpy 等注入鼠标事件的工具）的瞬间，Android 全屏下会弹"如需显示光标…"系统提示，部分 ROM 会静默掐断当前触摸流，不派发任何结束事件导致方向键卡死。用不依赖触摸事件的独立信号强制复位：
+							// ① 精细指针设备热插拔 → (any-pointer: fine) 媒体查询变化
+							if (window.matchMedia) {
+								const fineMq = window.matchMedia('(any-pointer: fine)');
+								fineMq.addEventListener('change', () => {
+									if (fineMq.matches) releaseStuckControls();
+								});
+							}
+							// ② 光标实际出现（鼠标事件到来）：覆盖设备开机时已连接、媒体查询不发生变化的环境（如 scrcpy 注入），摇杆/按键处于按下态时强制释放。
+							// 仅响应无按键悬停的光标：鼠标按住拖拽摇杆时浏览器会派发 buttons=1 的边界校正
+							// pointerover，不能把正常鼠标操作误判为设备切换
+							window.addEventListener('pointerover', (e) => {
+								if (e.pointerType === 'mouse' && e.buttons === 0 && (
+										joyId !==
+										null || pressed.size > 0)) releaseStuckControls();
+							});
 							joyBase.addEventListener('contextmenu', e => e.preventDefault());
 							// 切后台/失焦时摇杆回中
 							document.addEventListener('visibilitychange', () => {
