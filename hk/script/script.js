@@ -815,7 +815,19 @@ document.getElementById('btn-confirm').onclick = (e) => {
 						streamingAssetsUrl: "./StreamingAssets",
 						companyName: "Team Cherry",
 						productName: "Hollow Knight",
-						productVersion: "1.0"
+						productVersion: "1.0",
+						// 为了更好的性能，优先使用 WebGL2
+						useWebGL2: true,
+						// WebGL 上下文属性：无抗锯齿，不保留绘图缓冲区
+						webglContextAttributes: {
+							antialias: false,
+							alpha: false,
+							depth: true,
+							stencil: false,
+							premultipliedAlpha: false,
+							preserveDrawingBuffer: false,
+							desynchronized: true
+						}
 					}, (progress) => {
 						progress = `${(progress * 100).toFixed(2)}%`;
 						setStatus(`${progress} - 数据载入中...`);
